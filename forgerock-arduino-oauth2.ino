@@ -16,12 +16,15 @@
 /*
  * Set global constant attributes.
  */
-static const char WIFI_SSID[] = "WiFi-2.4-19C8"; // ADJUST TO SETUP
-static const char WIFI_PASSWORD[] = "4aMp69QnkQ1W"; // ADJUST TO SETUP
+static const char WIFI_SSID[] = "iPhone"; //"WiFi-2.4-19C8"; // ADJUST TO SETUP
+static const char WIFI_PASSWORD[] = "gzmc39pmc1bm0"; //"4aMp69QnkQ1W"; // ADJUST TO SETUP
 static const String OPENAM_HOST = "openam.example.com:8080"; // ADJUST TO SETUP
-static const IPAddress OPENAM_SERVER(192,168,1,5); // ADJUST TO SETUP
+static const String APP_HOST = "app.example.com:8080"; // ADJUST TO SETUP
+static const IPAddress OPENAM_SERVER(172,20,10,3); //OPENAM_SERVER(192,168,1,5); //  ADJUST TO SETUP
+static const IPAddress APP_SERVER(172,20,10,3); //APP_SERVER(192,168,1,5); //  ADJUST TO SETUP
 static const int OPENAM_PORT = 8080; // ADJUST TO SETUP
-static const char OAUTH_CLIENT_ID[] = "client"; // ADJUST TO SETUP
+static const int APP_PORT = 8080; // ADJUST TO SETUP
+static const char OAUTH_CLIENT_ID[] = "ArduinoClient"; // ADJUST TO SETUP
 static const char OAUTH_CLIENT_SECRET[] = "forgerock"; // ADJUST TO SETUP
 static const int SERIAL_PORT = 9600;
 static const int NO_LED = -1;
@@ -33,6 +36,7 @@ static const int ERROR_STATE = -1;
 static const int INITIAL_STATE = 0;
 static const int WAIT_STATE = 1;
 static const int END_STATE = 2;
+static const int TMP_SENSOR = A0;
 
 /*
  * Set global variable attributes.
@@ -111,12 +115,12 @@ boolean connect() {
 
     status = WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    Serial.println("Waiting for connection to WiFi network! >> sleeping 5 seconds");
+    Serial.println("Waiting for connection to WiFi network! >> sleeping 1 second");
 
     /*
-     * Wait 5 seconds.
+     * Wait 1 second.
      */
-    delay(5000);
+    delay(1000);
   
   }
 
@@ -139,22 +143,22 @@ void loop() {
     case INITIAL_STATE:
       
       executeInitialState();
-      Serial.println("Waiting for next loop! >> sleeping 5 seconds");
-      delay(5000);
+      Serial.println("Waiting for next loop! >> sleeping 1 second");
+      delay(1000);
       
       break;
     case WAIT_STATE:
       
       executeWaitState();
-      Serial.println("Waiting for next loop! >> sleeping 5 seconds");
-      delay(5000);
+      Serial.println("Waiting for next loop! >> sleeping 1 second");
+      delay(1000);
       
       break;
     case END_STATE:
     
       executeEndState();
-      Serial.println("Waiting for next loop! >> sleeping 1 minute");
-      delay(60000);
+      Serial.println("Waiting for next loop! >> sleeping 5 seconds");
+      delay(5000);
       
       break;
     default:
@@ -183,16 +187,16 @@ void executeInitialState() {
    */
   while (!WIFI_CLIENT.connect(OPENAM_SERVER, OPENAM_PORT)) {
 
-    Serial.println("Waiting for connection to OpenAM! >> sleeping 5 seconds");
+    Serial.println("Waiting for connection to OpenAM! >> sleeping 1 second");
     
-    delay(5000);
+    delay(1000);
   
   }
 
   /*
    * Send OAuth device code request.
    */
-  String data = "response_type=token&scope=cn%20mail&client_id=" + String(OAUTH_CLIENT_ID);
+  String data = "response_type=token&scope=givenName%20temp&client_id=" + String(OAUTH_CLIENT_ID);
   
   WIFI_CLIENT.println("POST /openam/oauth2/device/code HTTP/1.1");
   WIFI_CLIENT.println("Host: " + OPENAM_HOST);
@@ -209,9 +213,9 @@ void executeInitialState() {
   */
   while (!WIFI_CLIENT.available()) {
 
-    Serial.println("Waiting for response from OpenAM! >> sleeping 5 seconds");
+    Serial.println("Waiting for response from OpenAM! >> sleeping 1 second");
     
-    delay(5000);
+    delay(1000);
   
   }
 
@@ -302,9 +306,9 @@ void executeWaitState() {
    */
   while (!WIFI_CLIENT.connect(OPENAM_SERVER, OPENAM_PORT)) {
 
-    Serial.println("Waiting for connection to OpenAM! >> sleeping 5 seconds");
+    Serial.println("Waiting for connection to OpenAM! >> sleeping 1 second");
     
-    delay(5000);
+    delay(1000);
   
   }
 
@@ -332,9 +336,9 @@ void executeWaitState() {
   */
   while (!WIFI_CLIENT.available()) {
 
-    Serial.println("Waiting for response from OpenAM! >> sleeping 5 seconds");
+    Serial.println("Waiting for response from OpenAM! >> sleeping 1 second");
     
-    delay(5000);
+    delay(1000);
   
   }
 
@@ -389,9 +393,9 @@ void executeEndState() {
    */
   while (!WIFI_CLIENT.connect(OPENAM_SERVER, OPENAM_PORT)) {
 
-    Serial.println("Waiting for connection to OpenAM! >> sleeping 5 seconds");
+    Serial.println("Waiting for connection to OpenAM! >> sleeping 1 second");
     
-    delay(5000);
+    delay(1000);
   
   }
 
@@ -410,19 +414,19 @@ void executeEndState() {
   */
   while (!WIFI_CLIENT.available()) {
 
-    Serial.println("Waiting for response from OpenAM! >> sleeping 5 seconds");
+    Serial.println("Waiting for response from OpenAM! >> sleeping 1 second");
     
-    delay(5000);
+    delay(1000);
   
   }
 
   /*
    * Parse response.
    */
-  char responseBuffer[250];
+  char responseBuffer[500];
   int i = 0;
   
-  while (WIFI_CLIENT.available() && i < 250) {
+  while (WIFI_CLIENT.available() && i < 500) {
     char c = WIFI_CLIENT.read();
     if (i > 0 || c == '{') {
       responseBuffer[i] = c;
@@ -432,12 +436,52 @@ void executeEndState() {
   }
   WIFI_CLIENT.flush();
 
-  StaticJsonBuffer<250> jsonBuffer;
+  StaticJsonBuffer<500> jsonBuffer;
   JsonObject& response = jsonBuffer.parseObject(responseBuffer);
 
-  String mail = response["mail"];
+  if (response["error"]) {
 
-  output("User Connected  " + mail, GREEN_LED);
+    CURRENT_STATE = INITIAL_STATE;
+    
+  } else {
+    
+    String temp = String((((analogRead(TMP_SENSOR) / 1024.0) * 5.0) - 1) * 100);
+
+    String givenName = response["givenName"];
+  
+    String userInfo = "User: " + givenName;
+  
+    while (userInfo.length() < LCD_WIDTH) userInfo += " ";
+  
+    output(userInfo.substring(0,LCD_WIDTH) + "Temp: " + temp + " C", GREEN_LED);
+
+    /*
+     * Stop all connections.
+     */
+    WIFI_CLIENT.stop();
+  
+    /*
+     * Connect to app server.
+     */
+    while (!WIFI_CLIENT.connect(APP_SERVER, APP_PORT)) {
+  
+      Serial.println("Waiting for connection to App! >> sleeping 1 second");
+      
+      delay(1000);
+    
+    }
+  
+    /*
+     * Send temperature information.
+     */   
+    WIFI_CLIENT.println("POST /UCB/App?temp=" + temp + " HTTP/1.1");
+    WIFI_CLIENT.println("Host: " + APP_HOST);
+    WIFI_CLIENT.println("User-Agent: ArduinoWiFi/1.1");
+    WIFI_CLIENT.println("");
+    WIFI_CLIENT.println("Connection: close");
+    WIFI_CLIENT.println();
+
+  }
   
 }
 
