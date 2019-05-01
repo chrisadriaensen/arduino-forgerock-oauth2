@@ -16,16 +16,16 @@
 /*
  * Set global constant attributes.
  */
-static const char WIFI_SSID[] = "iPhone"; //"WiFi-2.4-19C8"; // ADJUST TO SETUP
-static const char WIFI_PASSWORD[] = "gzmc39pmc1bm0"; //"4aMp69QnkQ1W"; // ADJUST TO SETUP
+static const char WIFI_SSID[] = ""; // ADJUST TO SETUP
+static const char WIFI_PASSWORD[] = ""; // ADJUST TO SETUP
 static const String OPENAM_HOST = "openam.example.com:8080"; // ADJUST TO SETUP
 static const String APP_HOST = "app.example.com:8080"; // ADJUST TO SETUP
 static const IPAddress OPENAM_SERVER(172,20,10,3); //OPENAM_SERVER(192,168,1,5); //  ADJUST TO SETUP
 static const IPAddress APP_SERVER(172,20,10,3); //APP_SERVER(192,168,1,5); //  ADJUST TO SETUP
 static const int OPENAM_PORT = 8080; // ADJUST TO SETUP
 static const int APP_PORT = 8080; // ADJUST TO SETUP
-static const char OAUTH_CLIENT_ID[] = "ArduinoClient"; // ADJUST TO SETUP
-static const char OAUTH_CLIENT_SECRET[] = "forgerock"; // ADJUST TO SETUP
+static const char OAUTH_CLIENT_ID[] = ""; // ADJUST TO SETUP
+static const char OAUTH_CLIENT_SECRET[] = ""; // ADJUST TO SETUP
 static const int SERIAL_PORT = 9600;
 static const int NO_LED = -1;
 static const int RED_LED = 0;
